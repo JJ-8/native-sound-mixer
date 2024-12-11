@@ -162,12 +162,19 @@ DeviceObject::~DeviceObject()
 
 Napi::Value DeviceObject::New(Napi::Env env, void *device)
 {
-
     Device *dev = reinterpret_cast<Device *>(device);
     Napi::Object result = constructor->New({});
-    Napi::ObjectWrap<DeviceObject>::Unwrap(result)->pDevice = dev;
-    result.Set("name", dev->Desc().fullName);
-    result.Set("type", (int)dev->Desc().type);
+
+    if (device == NULL)
+    {
+        Napi::ObjectWrap<DeviceObject>::Unwrap(result)->pDevice = NULL;
+        result.Set("name", "");
+        result.Set("type", (int)-1);
+    } else {
+        Napi::ObjectWrap<DeviceObject>::Unwrap(result)->pDevice = dev;
+        result.Set("name", dev->Desc().fullName);
+        result.Set("type", (int)dev->Desc().type);
+    }
     return result;
 }
 
@@ -198,6 +205,10 @@ Napi::Value DeviceObject::GetType(const Napi::CallbackInfo &info)
 Napi::Value DeviceObject::GetVolume(const Napi::CallbackInfo &info)
 {
     Device *dev = reinterpret_cast<Device *>(pDevice);
+    if (dev == NULL)
+    {
+        return Napi::Number::New(info.Env(), -1);
+    }
     return Napi::Number::New(info.Env(), dev->GetVolume());
 }
 
@@ -206,12 +217,20 @@ void DeviceObject::SetVolume(
 {
     float volume = value.As<Napi::Number>().FloatValue();
     Device *dev = reinterpret_cast<Device *>(pDevice);
+    if (dev == NULL)
+    {
+        return;
+    }
     dev->SetVolume(volume);
 }
 
 Napi::Value DeviceObject::GetMute(const Napi::CallbackInfo &info)
 {
     Device *dev = reinterpret_cast<Device *>(pDevice);
+    if (dev == NULL)
+    {
+        return Napi::Boolean::New(info.Env(), false);
+    }
     return Napi::Boolean::New(info.Env(), dev->GetMute());
 }
 
@@ -220,6 +239,10 @@ void DeviceObject::SetMute(
 {
     bool val = value.As<Napi::Boolean>().Value();
     Device *dev = reinterpret_cast<Device *>(pDevice);
+    if (dev == NULL)
+    {
+        return;
+    }
     dev->SetMute(val);
 }
 
@@ -278,6 +301,10 @@ Napi::Value DeviceObject::RemoveEvent(const Napi::CallbackInfo &info)
 Napi::Value DeviceObject::GetChannelVolume(const Napi::CallbackInfo &info)
 {
     Device *dev = reinterpret_cast<Device *>(pDevice);
+    if (dev == NULL)
+    {
+        return Napi::Object::New(info.Env());
+    }
     VolumeBalance balance = dev->GetVolumeBalance();
     Napi::Object result = Napi::Object::New(info.Env());
     result.Set("right", balance.right);
@@ -295,6 +322,10 @@ void DeviceObject::SetChannelVolume(
         return;
     }
     Device *dev = reinterpret_cast<Device *>(pDevice);
+    if (dev == NULL)
+    {
+        return;
+    }
     VolumeBalance balance
         = {param.Get("right").As<Napi::Number>().FloatValue(),
             param.Get("left").As<Napi::Number>().FloatValue(), true};
@@ -305,6 +336,10 @@ void DeviceObject::SetChannelVolume(
 Napi::Value DeviceObject::GetSessions(const Napi::CallbackInfo &info)
 {
     Device *dev = reinterpret_cast<Device *>(pDevice);
+    if (dev == NULL)
+    {
+        return Napi::Array::New(info.Env());
+    }
     Napi::Array result = Napi::Array::New(info.Env());
     int i = 0;
     for (AudioSession *s : dev->GetAudioSessions())
